@@ -137,13 +137,8 @@ const batchTransferSample = {
       // --- Nested: struct, struct[] ---
       { name: 'metadata', type: 'TransferMetadata' },
       { name: 'items', type: 'TransferItem[]' },
-      // --- Fixed-size bytes: bytes1, bytes4, bytes8, bytes16, bytes32, bytes1[], bytes32[] ---
-      { name: 'fixedByte1', type: 'bytes1' },
-      { name: 'fixedByte4', type: 'bytes4' },
-      { name: 'fixedByte8', type: 'bytes8' },
-      { name: 'fixedByte16', type: 'bytes16' },
+      // --- Fixed-size bytes: bytes32, bytes32[] ---
       { name: 'fixedByte32', type: 'bytes32' },
-      { name: 'fixedBytes1Array', type: 'bytes1[]' },
       { name: 'dataHashes', type: 'bytes32[]' },
       // --- Unsigned: uint8..uint256, uint8[], uint16[], uint32[], uint64[], uint128[], uint256[], uint256[M] ---
       { name: 'u8', type: 'uint8' },
@@ -179,12 +174,7 @@ const batchTransferSample = {
       { to: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', amount: '2500000000000000000' },
       { to: '0x90F79bf6EB2c4f870365E785982E1f101E93b906', amount: '500000000000000000' },
     ],
-    fixedByte1: '0x01',
-    fixedByte4: '0x12345678',
-    fixedByte8: '0x1234567890abcdef',
-    fixedByte16: '0x1234567890abcdef1234567890abcdef',
     fixedByte32: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-    fixedBytes1Array: ['0x01', '0x02', '0xff'],
     dataHashes: [
       '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
       '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
