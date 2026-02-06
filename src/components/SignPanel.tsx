@@ -158,15 +158,16 @@ export function SignPanel({ onLog }: SignPanelProps) {
             // Fallback to connectorClient with type assertion
             try {
               signature = (await connectorClient.request({
-                method: activeMethod,
+                method: activeMethod as 'eth_signTypedData_v4',
                 params: [address, typedDataAsString],
               })) as string;
               // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (_) {
               // If string format fails, try object format
               signature = (await connectorClient.request({
-                method: activeMethod,
-                params: [address, params],
+                method: activeMethod as 'eth_signTypedData_v4',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                params: [address, params as any],
               })) as string;
             }
           } else {
