@@ -2,7 +2,15 @@ import { useCallback, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Minimize2, Download, Upload, RotateCcw } from 'lucide-react';
+import {
+  Maximize2,
+  Minimize2,
+  Download,
+  Upload,
+  RotateCcw,
+  Trash2,
+  ClipboardPaste,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface JsonEditorProps {
@@ -100,6 +108,23 @@ export function JsonEditor({
     input.click();
   }, [onChange, validateAndNotify]);
 
+  const clearJson = useCallback(() => {
+    const empty = '{}';
+    onChange(empty);
+    validateAndNotify(empty);
+  }, [onChange, validateAndNotify]);
+
+  const pasteFromClipboard = useCallback(async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const appended = value + text;
+      onChange(appended);
+      validateAndNotify(appended);
+    } catch {
+      // Clipboard API may be denied or unavailable
+    }
+  }, [value, onChange, validateAndNotify]);
+
   const editorHeight =
     typeof window !== 'undefined' && window.innerWidth < 640 ? EDITOR_HEIGHT_MOBILE : height;
 
@@ -121,6 +146,24 @@ export function JsonEditor({
             title="Format"
           >
             <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 sm:h-9 sm:w-9"
+            onClick={clearJson}
+            title="Clear JSON"
+          >
+            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 sm:h-9 sm:w-9"
+            onClick={pasteFromClipboard}
+            title="Paste from clipboard"
+          >
+            <ClipboardPaste className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Button>
           <Button
             variant="ghost"
