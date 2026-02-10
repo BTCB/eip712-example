@@ -202,7 +202,7 @@ const batchTransferSample = {
     fixedByte32: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
     fixedByte1Array: ['0x12', '0x34', '0x56'],
     fixedByte4Array: ['0x12345678', '0x90abcdef', '0xcdef1234'],
-    fixedByte8Array: ['0x1234567890abcdef', '0xcdef1234567890abcdef', '0x7890abcdef12345678'],
+    fixedByte8Array: ['0x1234567890abcdef', '0xcdef1234567890ab', '0x7890abcdef123456'],
     fixedByte16Array: [
       '0x1234567890abcdef1234567890abcdef',
       '0xcdef1234567890abcdef1234567890ab',
