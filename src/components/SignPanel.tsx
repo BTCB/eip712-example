@@ -121,11 +121,16 @@ export function SignPanel({ onLog }: SignPanelProps) {
       const errMsg = err instanceof Error ? err.message : String(err);
 
       // If address validation fails, try direct RPC call
-      if (errMsg.includes('address') || errMsg.includes('Address') || errMsg.includes('Invalid')) {
+      if (
+        errMsg.includes('viem') ||
+        errMsg.includes('address') ||
+        errMsg.includes('Address') ||
+        errMsg.includes('Invalid')
+      ) {
         onLog({
           time: new Date().toISOString(),
           level: 'info',
-          message: '检测到地址格式问题，尝试直接调用 RPC 方法',
+          message: '检测到格式问题，尝试直接调用 RPC 方法',
         });
 
         try {
