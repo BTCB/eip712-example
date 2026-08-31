@@ -32,7 +32,7 @@ export function ChainSwitch() {
     >
       {chains.map((c) => (
         <option key={c.id} value={c.id}>
-          {c.name}（#{c.id}，0x{c.id.toString(16).padStart(8, '0')}）
+          {c.name}（#{c.id}，0x{c.id.toString(16)}）
         </option>
       ))}
     </select>
