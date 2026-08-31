@@ -119,7 +119,12 @@ export function SignPanel({ onLog }: SignPanelProps) {
       time: new Date().toISOString(),
       level: 'info',
       message: `开始签名，方法: ${activeMethod}`,
-      detail: { domain: params.domain, primaryType: params.primaryType },
+      detail: {
+        address,
+        domain: params.domain,
+        primaryType: params.primaryType,
+        typedData: params,
+      },
     });
 
     setSigning(true);
@@ -173,13 +178,16 @@ export function SignPanel({ onLog }: SignPanelProps) {
       });
     } catch (error) {
       console.error(error);
-      const data = error instanceof Error ? (error as { data?: unknown }).data : undefined;
+      const rpcErr = error as { code?: number; data?: unknown; stack?: string };
+      const detail: Record<string, unknown> = { error: formatError(error) };
+      if (typeof rpcErr.code === 'number') detail.code = rpcErr.code;
+      if (rpcErr.data !== undefined) detail.data = rpcErr.data;
+      if (rpcErr.stack) detail.stack = rpcErr.stack;
       onLog({
         time: new Date().toISOString(),
         level: 'error',
         message: '签名失败',
-        detail:
-          data !== undefined ? { error: formatError(error), data } : { error: formatError(error) },
+        detail,
       });
     } finally {
       setSigning(false);
