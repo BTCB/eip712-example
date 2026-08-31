@@ -17,6 +17,26 @@ export interface SignPanelProps {
   onLog: (entry: LogEntry) => void;
 }
 
+/**
+ * 把异常转换成可读信息。
+ * - Error：用 message
+ * - RPC/框架错误：其真实详情往往挂在 .data / .code 上，直接 String 会变成 "[object object]"
+ * - 其它对象：尽量序列化
+ */
+function formatError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
 function parseTypedDataJson(json: string): TypedDataParams | null {
   try {
     const raw = JSON.parse(json) as {
@@ -153,12 +173,13 @@ export function SignPanel({ onLog }: SignPanelProps) {
       });
     } catch (error) {
       console.error(error);
-      const rpcMsg = error instanceof Error ? error.message : String(error);
+      const data = error instanceof Error ? (error as { data?: unknown }).data : undefined;
       onLog({
         time: new Date().toISOString(),
         level: 'error',
         message: '签名失败',
-        detail: { error: rpcMsg },
+        detail:
+          data !== undefined ? { error: formatError(error), data } : { error: formatError(error) },
       });
     } finally {
       setSigning(false);
