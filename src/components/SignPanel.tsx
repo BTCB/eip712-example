@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useAccount, useSignTypedData, useConnectorClient } from 'wagmi';
+import { useAccount, useConnectorClient } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { JsonEditor } from '@/components/JsonEditor';
@@ -52,9 +52,9 @@ export function SignPanel({ onLog }: SignPanelProps) {
     return t?.json ?? '{}';
   });
   const [jsonValid, setJsonValid] = useState(true);
+  const [isSigning, setSigning] = useState(false);
 
   const { address, isConnected } = useAccount();
-  const { signTypedDataAsync, isPending: isSigning } = useSignTypedData();
   const { data: connectorClient } = useConnectorClient();
 
   const fillTemplate = useCallback((method: SignMethod) => {
@@ -102,14 +102,48 @@ export function SignPanel({ onLog }: SignPanelProps) {
       detail: { domain: params.domain, primaryType: params.primaryType },
     });
 
+    setSigning(true);
     try {
-      // Try wagmi's signTypedDataAsync first
-      const signature = await signTypedDataAsync({
-        domain: params.domain,
-        types: params.types,
-        primaryType: params.primaryType,
-        message: params.message,
-      });
+      // 直接走 RPC 方法，由 activeMethod 决定 v1/v3/v4，保证钱包收到对应版本
+      const typedDataAsString = JSON.stringify(params);
+
+      // Some wallets (like MetaMask) expect the typedData as a JSON string.
+      // Try both formats: JSON string first, then object (some wallets prefer this).
+      const ethereum =
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        typeof window !== 'undefined' ? (window as any).ethereum : null;
+      let signature: string;
+
+      if (ethereum) {
+        try {
+          signature = await ethereum.request({
+            method: activeMethod,
+            params: [address, typedDataAsString],
+          });
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_) {
+          signature = await ethereum.request({
+            method: activeMethod,
+            params: [address, params],
+          });
+        }
+      } else if (connectorClient) {
+        try {
+          signature = (await connectorClient.request({
+            method: activeMethod as 'eth_signTypedData_v4',
+            params: [address, typedDataAsString],
+          })) as string;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_) {
+          signature = (await connectorClient.request({
+            method: activeMethod as 'eth_signTypedData_v4',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            params: [address, params as any],
+          })) as string;
+        }
+      } else {
+        throw new Error('无法获取钱包连接');
+      }
 
       onLog({
         time: new Date().toISOString(),
@@ -117,103 +151,19 @@ export function SignPanel({ onLog }: SignPanelProps) {
         message: '签名成功',
         detail: { signature, method: activeMethod },
       });
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-
-      // If address validation fails, try direct RPC call
-      if (
-        errMsg.includes('viem') ||
-        errMsg.includes('address') ||
-        errMsg.includes('Address') ||
-        errMsg.includes('Invalid')
-      ) {
-        onLog({
-          time: new Date().toISOString(),
-          level: 'info',
-          message: '检测到格式问题，尝试直接调用 RPC 方法',
-        });
-
-        try {
-          let signature: string;
-
-          // Try window.ethereum first (most wallets expose this)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const ethereum = typeof window !== 'undefined' ? (window as any).ethereum : null;
-
-          // Some wallets (like MetaMask) expect the typedData as a JSON string
-          // Try both formats: object and JSON string
-          const typedDataAsString = JSON.stringify(params);
-
-          if (ethereum) {
-            // Try JSON string format first (MetaMask expects this)
-            try {
-              signature = await ethereum.request({
-                method: activeMethod,
-                params: [address, typedDataAsString],
-              });
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            } catch (_) {
-              // If string format fails, try object format (some wallets prefer this)
-              signature = await ethereum.request({
-                method: activeMethod,
-                params: [address, params],
-              });
-            }
-          } else if (connectorClient) {
-            // Fallback to connectorClient with type assertion
-            try {
-              signature = (await connectorClient.request({
-                method: activeMethod as 'eth_signTypedData_v4',
-                params: [address, typedDataAsString],
-              })) as string;
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            } catch (_) {
-              // If string format fails, try object format
-              signature = (await connectorClient.request({
-                method: activeMethod as 'eth_signTypedData_v4',
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                params: [address, params as any],
-              })) as string;
-            }
-          } else {
-            throw new Error('无法获取钱包连接');
-          }
-
-          onLog({
-            time: new Date().toISOString(),
-            level: 'success',
-            message: '签名成功（通过 RPC）',
-            detail: { signature, method: activeMethod },
-          });
-        } catch (error) {
-          console.error(error);
-          const rpcMsg = error instanceof Error ? error.message : String(error);
-          onLog({
-            time: new Date().toISOString(),
-            level: 'error',
-            message: '签名失败（RPC 调用）',
-            detail: { error: rpcMsg },
-          });
-        }
-      } else {
-        onLog({
-          time: new Date().toISOString(),
-          level: 'error',
-          message: '签名失败',
-          detail: { error: errMsg },
-        });
-      }
+    } catch (error) {
+      console.error(error);
+      const rpcMsg = error instanceof Error ? error.message : String(error);
+      onLog({
+        time: new Date().toISOString(),
+        level: 'error',
+        message: '签名失败',
+        detail: { error: rpcMsg },
+      });
+    } finally {
+      setSigning(false);
     }
-  }, [
-    isConnected,
-    address,
-    signTypedDataAsync,
-    connectorClient,
-    jsonValid,
-    editorValue,
-    activeMethod,
-    onLog,
-  ]);
+  }, [isConnected, address, connectorClient, jsonValid, editorValue, activeMethod, onLog]);
 
   return (
     <div className="space-y-3 sm:space-y-4">
