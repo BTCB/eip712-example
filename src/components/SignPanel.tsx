@@ -74,7 +74,7 @@ export function SignPanel({ onLog }: SignPanelProps) {
   const [jsonValid, setJsonValid] = useState(true);
   const [isSigning, setSigning] = useState(false);
 
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const { data: connectorClient } = useConnectorClient();
 
   const fillTemplate = useCallback((method: SignMethod) => {
@@ -118,7 +118,7 @@ export function SignPanel({ onLog }: SignPanelProps) {
     onLog({
       time: new Date().toISOString(),
       level: 'info',
-      message: `开始签名，方法: ${activeMethod}`,
+      message: `钱包：${connector?.name}, 开始签名，方法: ${activeMethod}`,
       detail: {
         address,
         domain: params.domain,
@@ -139,20 +139,7 @@ export function SignPanel({ onLog }: SignPanelProps) {
         typeof window !== 'undefined' ? (window as any).ethereum : null;
       let signature: string;
 
-      if (ethereum) {
-        try {
-          signature = await ethereum.request({
-            method: activeMethod,
-            params: [address, typedDataAsString],
-          });
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (_) {
-          signature = await ethereum.request({
-            method: activeMethod,
-            params: [address, params],
-          });
-        }
-      } else if (connectorClient) {
+      if (connectorClient) {
         try {
           signature = (await connectorClient.request({
             method: activeMethod as 'eth_signTypedData_v4',
@@ -165,6 +152,22 @@ export function SignPanel({ onLog }: SignPanelProps) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             params: [address, params as any],
           })) as string;
+        }
+      } else if (ethereum) {
+        console.log(2);
+        console.log(`activeMethod: ${activeMethod}`);
+        console.log('typedDataAsString: ', typedDataAsString);
+        try {
+          signature = await ethereum.request({
+            method: activeMethod,
+            params: [address, typedDataAsString],
+          });
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_) {
+          signature = await ethereum.request({
+            method: activeMethod,
+            params: [address, params],
+          });
         }
       } else {
         throw new Error('无法获取钱包连接');
