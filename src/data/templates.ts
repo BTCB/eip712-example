@@ -1,36 +1,17 @@
 import type { ExampleTemplate } from '@/types/eip712';
 
-const domainMessageSample = {
-  domain: {
-    name: 'EIP712Example',
-    version: '1',
-    chainId: 1,
-    verifyingContract: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+const v1MessageSample = [
+  {
+    type: 'string',
+    name: 'Message',
+    value: 'Hi, Alice!',
   },
-  types: {
-    Person: [
-      { name: 'name', type: 'string' },
-      { name: 'wallet', type: 'address' },
-    ],
-    Mail: [
-      { name: 'from', type: 'Person' },
-      { name: 'to', type: 'Person' },
-      { name: 'contents', type: 'string' },
-    ],
+  {
+    type: 'uint32',
+    name: 'A number',
+    value: '1337',
   },
-  primaryType: 'Mail' as const,
-  message: {
-    from: {
-      name: 'Alice',
-      wallet: '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826',
-    },
-    to: {
-      name: 'Bob',
-      wallet: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
-    },
-    contents: 'Hello, Bob!',
-  },
-};
+];
 
 const permitSample = {
   domain: {
@@ -251,19 +232,13 @@ const batchTransferSample = {
 // - v3：+ address，且不允许数组（v3 的 message 不能有数组）
 // - v4：+ string[]，v4 才支持数组字段
 const minimalTypedData = {
-  v1: {
-    domain: {
+  v1: [
+    {
+      type: 'string',
       name: 'Test',
-      version: '1',
-      chainId: 1,
-      verifyingContract: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+      value: 'Hi',
     },
-    types: {
-      Mail: [{ name: 'contents', type: 'string' }],
-    },
-    primaryType: 'Mail' as const,
-    message: { contents: 'hello world' },
-  },
+  ],
   v3: {
     domain: {
       name: 'Test',
@@ -329,7 +304,7 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
   {
     method: 'eth_signTypedData',
     label: 'eth_signTypedData (v1)',
-    json: toTypedDataJson(domainMessageSample),
+    json: toTypedDataJson(v1MessageSample),
   },
   {
     method: 'eth_signTypedData_v3',

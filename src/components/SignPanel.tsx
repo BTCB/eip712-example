@@ -105,8 +105,11 @@ export function SignPanel({ onLog }: SignPanelProps) {
       return;
     }
 
-    const params = parseTypedDataJson(editorValue);
-    if (!params) {
+    const params =
+      activeMethod == 'eth_signTypedData'
+        ? JSON.parse(editorValue)
+        : parseTypedDataJson(editorValue);
+    if (activeMethod != 'eth_signTypedData' && !params) {
       onLog({
         time: new Date().toISOString(),
         level: 'error',
@@ -118,13 +121,7 @@ export function SignPanel({ onLog }: SignPanelProps) {
     onLog({
       time: new Date().toISOString(),
       level: 'info',
-      message: `钱包：${connector?.name}, 开始签名，方法: ${activeMethod}`,
-      detail: {
-        address,
-        domain: params.domain,
-        primaryType: params.primaryType,
-        typedData: params,
-      },
+      message: `钱包插件：${connector?.name}, 开始签名，方法: ${activeMethod}`,
     });
 
     setSigning(true);
@@ -139,34 +136,38 @@ export function SignPanel({ onLog }: SignPanelProps) {
         typeof window !== 'undefined' ? (window as any).ethereum : null;
       let signature: string;
 
+      const paramsArr = activeMethod == 'eth_signTypedData' ? [params, address] : [address, params];
+      const paramsArrString =
+        activeMethod == 'eth_signTypedData'
+          ? [typedDataAsString, address]
+          : [address, typedDataAsString];
+
       if (connectorClient) {
         try {
           signature = (await connectorClient.request({
             method: activeMethod as 'eth_signTypedData_v4',
-            params: [address, typedDataAsString],
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            params: paramsArrString as any,
           })) as string;
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_) {
           signature = (await connectorClient.request({
             method: activeMethod as 'eth_signTypedData_v4',
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            params: [address, params as any],
+            params: paramsArr as any,
           })) as string;
         }
       } else if (ethereum) {
-        console.log(2);
-        console.log(`activeMethod: ${activeMethod}`);
-        console.log('typedDataAsString: ', typedDataAsString);
         try {
           signature = await ethereum.request({
             method: activeMethod,
-            params: [address, typedDataAsString],
+            params: paramsArrString,
           });
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_) {
           signature = await ethereum.request({
             method: activeMethod,
-            params: [address, params],
+            params: paramsArr,
           });
         }
       } else {
@@ -195,7 +196,16 @@ export function SignPanel({ onLog }: SignPanelProps) {
     } finally {
       setSigning(false);
     }
-  }, [isConnected, address, connectorClient, jsonValid, editorValue, activeMethod, onLog]);
+  }, [
+    isConnected,
+    address,
+    connector?.name,
+    connectorClient,
+    jsonValid,
+    editorValue,
+    activeMethod,
+    onLog,
+  ]);
 
   return (
     <div className="space-y-3 sm:space-y-4">
