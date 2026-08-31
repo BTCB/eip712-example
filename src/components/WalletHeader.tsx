@@ -12,14 +12,16 @@ export function WalletHeader() {
       <h1 className="truncate text-base font-semibold sm:text-lg">EIP-712 签名工具</h1>
       <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-2 sm:gap-3 sm:justify-end">
         {isConnected && address && <ChainSwitch />}
-        <Button
-          variant="outline"
-          size="sm"
-          className="hidden shrink-0 sm:inline-flex"
-          onClick={() => disconnect()}
-        >
-          断开连接
-        </Button>
+        {isConnected && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden shrink-0 sm:inline-flex"
+            onClick={() => disconnect()}
+          >
+            断开连接
+          </Button>
+        )}
         <div className="shrink-0">
           <AppKitButton size="sm" />
         </div>
