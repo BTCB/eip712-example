@@ -245,11 +245,87 @@ const batchTransferSample = {
   },
 };
 
+// 最小但合法、能真正签出去的测试数据，适合快速验证 v1/v3/v4 的下发。
+// 三个版本结构一致，仅 message 复杂度递增：
+// - v1：单 string 字段，最基础
+// - v3：+ address，且不允许数组（v3 的 message 不能有数组）
+// - v4：+ string[]，v4 才支持数组字段
+const minimalTypedData = {
+  v1: {
+    domain: {
+      name: 'Test',
+      version: '1',
+      chainId: 1,
+      verifyingContract: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+    },
+    types: {
+      Mail: [{ name: 'contents', type: 'string' }],
+    },
+    primaryType: 'Mail' as const,
+    message: { contents: 'hello world' },
+  },
+  v3: {
+    domain: {
+      name: 'Test',
+      version: '1',
+      chainId: 1,
+      verifyingContract: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+    },
+    types: {
+      Mail: [
+        { name: 'contents', type: 'string' },
+        { name: 'to', type: 'address' },
+      ],
+    },
+    primaryType: 'Mail' as const,
+    message: {
+      contents: 'hello world',
+      to: '0x0000000000000000000000000000000000000000',
+    },
+  },
+  v4: {
+    domain: {
+      name: 'Test',
+      version: '1',
+      chainId: 1,
+      verifyingContract: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+    },
+    types: {
+      Mail: [
+        { name: 'contents', type: 'string' },
+        { name: 'to', type: 'address' },
+        { name: 'tags', type: 'string[]' },
+      ],
+    },
+    primaryType: 'Mail' as const,
+    message: {
+      contents: 'hello world',
+      to: '0x0000000000000000000000000000000000000000',
+      tags: ['a', 'b'],
+    },
+  },
+};
+
 function toTypedDataJson(obj: object): string {
   return JSON.stringify(obj, null, 2);
 }
 
 export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
+  {
+    method: 'eth_signTypedData',
+    label: '最小测试 (v1)',
+    json: toTypedDataJson(minimalTypedData.v1),
+  },
+  {
+    method: 'eth_signTypedData_v3',
+    label: '最小测试 (v3)',
+    json: toTypedDataJson(minimalTypedData.v3),
+  },
+  {
+    method: 'eth_signTypedData_v4',
+    label: '最小测试 (v4)',
+    json: toTypedDataJson(minimalTypedData.v4),
+  },
   {
     method: 'eth_signTypedData',
     label: 'eth_signTypedData (v1)',
