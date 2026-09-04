@@ -117,13 +117,12 @@ export function JsonEditor({
   const pasteFromClipboard = useCallback(async () => {
     try {
       const text = await navigator.clipboard.readText();
-      const appended = value + text;
-      onChange(appended);
-      validateAndNotify(appended);
+      onChange(text);
+      validateAndNotify(text);
     } catch {
       // Clipboard API may be denied or unavailable
     }
-  }, [value, onChange, validateAndNotify]);
+  }, [onChange, validateAndNotify]);
 
   const editorHeight =
     typeof window !== 'undefined' && window.innerWidth < 640 ? EDITOR_HEIGHT_MOBILE : height;
